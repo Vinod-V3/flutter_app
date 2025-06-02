@@ -52,6 +52,12 @@ class _WebViewScreenState extends State<WebViewScreen> {
                   await downloadAndSharePdf(content, title);
                 } else if (data['type'] == 'download') {
                   await downloadFileToDownloads(content, title);
+                }else if(data["type"] == "redirect"){
+                  if(data["pathType"] == "profile"){
+                    await Navigator.pushNamed(context, '<path-to-profile>');
+                  }else if(data["pathType"] == "login"){
+                    await Navigator.pushNamed(context, '<path-to-login>');
+                  }
                 }
               },
             );

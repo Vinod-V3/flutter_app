@@ -57,6 +57,8 @@ class _WebViewScreenState extends State<WebViewScreen> {
                     await Navigator.pushNamed(context, '<path-to-profile>');
                   }else if(data["pathType"] == "login"){
                     await Navigator.pushNamed(context, '<path-to-login>');
+                  }else if(data["pathType"] == "home"){
+                    await Navigator.pushNamed(context, '<path-to-home-page>');
                   }
                 }
               },

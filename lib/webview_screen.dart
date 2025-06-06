@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:share_plus/share_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:open_file/open_file.dart';
 
 class WebViewScreen extends StatefulWidget {
   final String url;
@@ -121,8 +122,9 @@ class _WebViewScreenState extends State<WebViewScreen> {
   Future<void> downloadFileToDownloads(String url, String filename) async {
     try {
       if (Platform.isAndroid) {
-        var status = await Permission.storage.request();
-        if (!status.isGranted) throw Exception("Storage permission not granted");
+        if (await _requestStoragePermission() == false) {
+          throw Exception("Storage permission not granted");
+        }
       }
 
       final response = await http.get(Uri.parse(url));
@@ -139,8 +141,29 @@ class _WebViewScreenState extends State<WebViewScreen> {
       final file = File(path)..writeAsBytesSync(response.bodyBytes);
 
       print("Saved to: $path");
+      final result = await OpenFile.open(path);
+      print("Open result: ${result.message}");
     } catch (e) {
       print("File save error: $e");
     }
+  }
+
+  Future<bool> _requestStoragePermission() async {
+    if (Platform.isAndroid) {
+      if (await Permission.manageExternalStorage.isGranted) {
+        return true;
+      }
+
+      var status = await Permission.manageExternalStorage.request();
+      if (status.isGranted) {
+        return true;
+      }
+
+      if (status.isPermanentlyDenied) {
+        openAppSettings();
+      }
+      return false;
+    }
+    return true;
   }
 }

@@ -60,7 +60,14 @@ class _WebViewScreenState extends State<WebViewScreen> {
                     await Navigator.pushNamed(context, '<path-to-login>');
                   }else if(data["pathType"] == "home"){
                     await Navigator.pushNamed(context, '<path-to-home-page>');
+                  }else if(data["pathType"] == "resources"){
+                    final do_id = data["id"];  // Ex. do_id is sent via the id key
+                    await Navigator.pushNamed(context, '<path-to-learning-resource>');
                   }
+                }else if (data['type'] == 'preview') {
+                  final isBase64 = data['isBase64'];
+                  final fileType = data['fileType'];
+                  await previewFile(content, title, fileType, isBase64);
                 }
               },
             );
@@ -166,4 +173,29 @@ class _WebViewScreenState extends State<WebViewScreen> {
     }
     return true;
   }
+
+  Future<void> previewFile(String content, String filename, String fileType, bool isBase64) async {
+    try {
+      final dir = await getTemporaryDirectory();
+      final filePath = '${dir.path}/$filename';
+
+      final file = File(filePath);
+
+      if (isBase64) {
+        final base64Str = content.split(',').last;
+        final bytes = base64Decode(base64Str);
+        await file.writeAsBytes(bytes);
+      } else {
+        final response = await http.get(Uri.parse(content));
+        if (response.statusCode != 200) throw Exception("Download failed for preview");
+        await file.writeAsBytes(response.bodyBytes);
+      }
+
+      final result = await OpenFile.open(filePath);
+      print("Preview opened: ${result.message}");
+    } catch (e) {
+      print("Preview error: $e");
+    }
+  }
+
 }

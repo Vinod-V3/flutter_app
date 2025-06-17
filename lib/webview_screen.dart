@@ -52,7 +52,9 @@ class _WebViewScreenState extends State<WebViewScreen> {
                 if (data['type'] == 'share') {
                   await downloadAndSharePdf(content, title);
                 } else if (data['type'] == 'download') {
-                  await downloadFileToDownloads(content, title);
+                  final isBase64 = data['isBase64'] ?? false;
+                  final fileType = data['fileType'] ?? 'pdf';
+                  await downloadFileToDownloads(content, title, fileType, isBase64);
                 }else if(data["type"] == "redirect"){
                   if(data["pathType"] == "profile"){
                     await Navigator.pushNamed(context, '<path-to-profile>');
@@ -126,16 +128,13 @@ class _WebViewScreenState extends State<WebViewScreen> {
     }
   }
 
-  Future<void> downloadFileToDownloads(String url, String filename) async {
+  Future<void> downloadFileToDownloads(String content, String filename, String fileType, bool isBase64) async {
     try {
       if (Platform.isAndroid) {
-        if (await _requestStoragePermission() == false) {
+        if (!await _requestStoragePermission()) {
           throw Exception("Storage permission not granted");
         }
       }
-
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode != 200) throw Exception("Download failed");
 
       Directory? downloadDir;
       if (Platform.isAndroid) {
@@ -144,8 +143,18 @@ class _WebViewScreenState extends State<WebViewScreen> {
         downloadDir = await getApplicationDocumentsDirectory();
       }
 
-      final path = '${downloadDir.path}/$filename.pdf';
-      final file = File(path)..writeAsBytesSync(response.bodyBytes);
+      final path = '${downloadDir.path}/$filename.$fileType';
+      final file = File(path);
+
+      if (isBase64) {
+        final base64Str = content.split(',').last;
+        final bytes = base64Decode(base64Str);
+        await file.writeAsBytes(bytes);
+      } else {
+        final response = await http.get(Uri.parse(content));
+        if (response.statusCode != 200) throw Exception("Download failed");
+        await file.writeAsBytes(response.bodyBytes);
+      }
 
       print("Saved to: $path");
       final result = await OpenFile.open(path);

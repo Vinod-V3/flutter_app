@@ -109,6 +109,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
         "school": "<value>",
         "role": "<value>"
       }));
+      localStorage.setItem('userType',<user-role>)
     """);
   }
 
